@@ -235,6 +235,6 @@ class TorcsEnv:
                               np.array(raw_obs['speedZ'], dtype=np.float32)/self.default_speed,
                               np.array(raw_obs['rpm'], dtype=np.float32),
                               np.array(raw_obs['track'], dtype=np.float32)/200.,
-                              np.array(raw_obs['wheelSpinVel'], dtype=np.float32)
+                              np.array(raw_obs['wheelSpinVel'], dtype=np.float32).reshape(-1)
                               ))
         return obs 
