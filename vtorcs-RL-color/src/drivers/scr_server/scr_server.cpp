@@ -838,6 +838,7 @@ int recvParameters(int index,tCarElt* car)
     {
         count++;
         msg = udpRecv(index,UDP_TIMEOUT);
+        cout << "Received params are: " << msg;
 #ifdef __VERBOSE__
         if (msg.compare("")==0)
 			printf("Communication Error! Cannot receive parameters from the client.\n");
@@ -903,7 +904,7 @@ string udpRecv(int index, long int timeout)
     FD_SET(listenSocket[index], &readSet);
     timeVal.tv_sec = timeout;
     timeVal.tv_usec = 0;
-    memset(line, 0x0,UDP_MSGLEN);
+    memset(line, 0x0, UDP_MSGLEN);
     clientAddressLength[index] = sizeof(clientAddress[index]);
 
     if (select(listenSocket[index]+1, &readSet, NULL, NULL, &timeVal))
