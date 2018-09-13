@@ -77,6 +77,11 @@ static int UDP_TIMEOUT = UDP_DEFAULT_TIMEOUT;
 #define __PAR_NUM__ 17
 
 #define NBBOTS 10
+#define BUFSIZE 256
+// Uncomment the following line to run the server in verbose mode
+#define __VERBOSE__
+
+#define __UDP_MSG_RETRY__ 7200
 
 #define RACE_RESTART 1
 //#define __STEP_LIMIT__ 10000
@@ -126,6 +131,7 @@ static tdble oldSteer[NBBOTS];
 static tdble oldClutch[NBBOTS];
 static tdble prevDist[NBBOTS];
 static tdble distRaced[NBBOTS];
+char trackname[256];
 
 static int oldFocus[NBBOTS];//ML
 static int oldGear[NBBOTS];
@@ -834,7 +840,7 @@ int recvParameters(int index,tCarElt* car)
     do
     {
         count++;
-        msg = udpRecv(index,__UDP_TIMEOUT__);
+        msg = udpRecv(index,UDP_TIMEOUT);
 #ifdef __VERBOSE__
         if (msg.compare("")==0)
 			printf("Communication Error! Cannot receive parameters from the client.\n");
@@ -1016,7 +1022,6 @@ string udpRecv(int index, long int timeout)
         if (numRead>0)
             return string(line);
     }
-    timeoutsCount[index] --;
     return string("");
 }
 
