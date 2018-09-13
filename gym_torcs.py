@@ -31,7 +31,7 @@ class TorcsEnv:
         time.sleep(0.5)
         os.system('torcs -T -nofuel -nodamage -nolaptime &')
         time.sleep(0.5)
-        os.system('sh autostart.sh')
+        #os.system('sh autostart.sh')
         time.sleep(0.5)
 
         
@@ -196,12 +196,9 @@ class TorcsEnv:
        #print("relaunch torcs")
         os.system('pkill torcs')
         time.sleep(0.5)
-        if self.vision is True:
-            os.system('torcs -nofuel -nodamage -nolaptime -vision &')
-        else:
-            os.system('torcs -nofuel -nodamage -nolaptime &')
+        os.system('torcs -T -nofuel -nodamage -nolaptime &')
         time.sleep(0.5)
-        os.system('sh autostart.sh')
+        #os.system('sh autostart.sh')
         time.sleep(0.5)
 
     def agent_to_torcs(self, u):
@@ -232,12 +229,12 @@ class TorcsEnv:
         return np.array(rgb, dtype=np.uint8)
 
     def make_observaton(self, raw_obs):
-        obs = np.concatenate((np.array(raw_obs['focus'], dtype=np.float32)/200),
+        obs = np.concatenate((np.array(raw_obs['focus'], dtype=np.float32)/200,
                               np.array(raw_obs['speedX'],dtype=np.float32)/self.default_speed,
                               np.array(raw_obs['speedY'], dtype=np.float32)/self.default_speed,
                               np.array(raw_obs['speedZ'], dtype=np.float32)/self.default_speed,
                               np.array(raw_obs['rpm'], dtype=np.float32),
                               np.array(raw_obs['track'], dtype=np.float32)/200.,
                               np.array(raw_obs['wheelSpinVel'], dtype=np.float32)
-                              )
+                              ))
         return obs 
