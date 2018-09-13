@@ -378,7 +378,7 @@ newrace(int index, tCarElt* car, tSituation *s)
 
     /*************************** car configuration ***************************/
     recvParameters(index, car);
-    std::cout << "RECEIVED PARAMETERS";
+    std::cout << "RACE IS STARTING... \n";
 }
 
 
@@ -838,7 +838,7 @@ int recvParameters(int index,tCarElt* car)
     {
         count++;
         msg = udpRecv(index,UDP_TIMEOUT);
-        cout << "Received params are: " << msg;
+        cout << "Received params are: " << msg <<"\n";
 #ifdef __VERBOSE__
         if (msg.compare("")==0)
 			printf("Communication Error! Cannot receive parameters from the client.\n");

@@ -29,10 +29,7 @@ class TorcsEnv:
         ##print("launch torcs")
         os.system('pkill torcs')
         time.sleep(0.5)
-        if self.vision is True:
-            os.system('torcs -nofuel -nodamage -nolaptime  -vision &')
-        else:
-            os.system('torcs  -nofuel -nodamage -nolaptime &')
+        os.system('torcs -T -nofuel -nodamage -nolaptime &')
         time.sleep(0.5)
         os.system('sh autostart.sh')
         time.sleep(0.5)
@@ -52,14 +49,9 @@ class TorcsEnv:
         else:
             self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(2,))
 
-        if vision is False:
-            high = np.array([1., np.inf, np.inf, np.inf, 1., np.inf, 1., np.inf])
-            low = np.array([0., -np.inf, -np.inf, -np.inf, 0., -np.inf, 0., -np.inf])
-            self.observation_space = spaces.Box(low=low, high=high)
-        else:
-            high = np.array([1., np.inf, np.inf, np.inf, 1., np.inf, 1., np.inf, 255])
-            low = np.array([0., -np.inf, -np.inf, -np.inf, 0., -np.inf, 0., -np.inf, 0])
-            self.observation_space = spaces.Box(low=low, high=high)
+        high = np.array([1., np.inf, np.inf, np.inf, 1., np.inf, 1., np.inf, 255])
+        low = np.array([0., -np.inf, -np.inf, -np.inf, 0., -np.inf, 0., -np.inf, 0])
+        self.observation_space = spaces.Box(low=low, high=high)
 
     def step(self, u):
        #print("Step")
@@ -240,41 +232,12 @@ class TorcsEnv:
         return np.array(rgb, dtype=np.uint8)
 
     def make_observaton(self, raw_obs):
-        if self.vision is False:
-            names = ['focus',
-                     'speedX', 'speedY', 'speedZ',
-                     'opponents',
-                     'rpm',
-                     'track',
-                     'wheelSpinVel']
-            Observation = col.namedtuple('Observaion', names)
-            return Observation(focus=np.array(raw_obs['focus'], dtype=np.float32)/200.,
-                               speedX=np.array(raw_obs['speedX'], dtype=np.float32)/self.default_speed,
-                               speedY=np.array(raw_obs['speedY'], dtype=np.float32)/self.default_speed,
-                               speedZ=np.array(raw_obs['speedZ'], dtype=np.float32)/self.default_speed,
-                               opponents=np.array(raw_obs['opponents'], dtype=np.float32)/200.,
-                               rpm=np.array(raw_obs['rpm'], dtype=np.float32),
-                               track=np.array(raw_obs['track'], dtype=np.float32)/200.,
-                               wheelSpinVel=np.array(raw_obs['wheelSpinVel'], dtype=np.float32))
-        else:
-            names = ['focus',
-                     'speedX', 'speedY', 'speedZ',
-                     'opponents',
-                     'rpm',
-                     'track',
-                     'wheelSpinVel',
-                     'img']
-            Observation = col.namedtuple('Observaion', names)
-
-            # Get RGB from observation
-            image_rgb = self.obs_vision_to_image_rgb(raw_obs[names[8]])
-
-            return Observation(focus=np.array(raw_obs['focus'], dtype=np.float32)/200.,
-                               speedX=np.array(raw_obs['speedX'], dtype=np.float32)/self.default_speed,
-                               speedY=np.array(raw_obs['speedY'], dtype=np.float32)/self.default_speed,
-                               speedZ=np.array(raw_obs['speedZ'], dtype=np.float32)/self.default_speed,
-                               opponents=np.array(raw_obs['opponents'], dtype=np.float32)/200.,
-                               rpm=np.array(raw_obs['rpm'], dtype=np.float32),
-                               track=np.array(raw_obs['track'], dtype=np.float32)/200.,
-                               wheelSpinVel=np.array(raw_obs['wheelSpinVel'], dtype=np.float32),
-                               img=image_rgb)
+        obs = np.concatenate((np.array(raw_obs['focus'], dtype=np.float32)/200),
+                              np.array(raw_obs['speedX'],dtype=np.float32)/self.default_speed,
+                              np.array(raw_obs['speedY'], dtype=np.float32)/self.default_speed,
+                              np.array(raw_obs['speedZ'], dtype=np.float32)/self.default_speed,
+                              np.array(raw_obs['rpm'], dtype=np.float32),
+                              np.array(raw_obs['track'], dtype=np.float32)/200.,
+                              np.array(raw_obs['wheelSpinVel'], dtype=np.float32)
+                              )
+        return obs 
