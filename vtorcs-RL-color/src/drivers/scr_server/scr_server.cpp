@@ -74,6 +74,7 @@ static int UDP_MSGLEN = 64*64+1000;
 /************************/
 
 static int UDP_TIMEOUT = UDP_DEFAULT_TIMEOUT;
+#define __PAR_NUM__ 17
 
 #define NBBOTS 10
 
@@ -138,6 +139,47 @@ static char* botname[NBBOTS] = {"scr_server 1", "scr_server 2", "scr_server 3", 
 
 static unsigned long total_tics[NBBOTS];
 
+
+static float filterABS(float brake,tCarElt* car);
+static const float ABS_SLIP=0.9;
+static const float ABS_MINSPEED=3.0;
+
+int recvParameters(int index, tCarElt* car);
+void sendResults(int index);
+bool udpSend(int index, string msg);
+string udpRecv(int index, long int timeout);
+void udpInit(int index);
+void loadDefault(int index,tCarElt* car);
+//************************************************************
+
+//*************Parameters*****************************
+struct Param
+{
+    char section[100];
+    char second_section[100];
+    char name[100];
+    char unit[100];
+
+    bool double_param;
+    double minVal;
+    double maxVal;
+    double defaultvalue;
+} paramData[__PAR_NUM__];
+
+int paramIndex[__PAR_NUM__];
+//***********************************************************
+
+/* function prototypes */
+static void initTrack(int index, tTrack* track, void *carHandle, void **carParmHandle, tSituation * situation);
+static void drive(int index, tCarElt* car, tSituation *situation);
+static void newRace(int index, tCarElt* car, tSituation *situation);
+static int  InitFuncPt(int index, void *pt);
+static int  pitcmd(int index, tCarElt* car, tSituation *s);
+static void shutdown(int index);
+static void initParam();
+static void loadSingleParam(int &idx,string section,string name,string unit, double minVal,double maxVal,double defaultVal);
+static void loadDoubleParam(int &idx,string section,string name,string unit, double minVal,double maxVal,double defaultVal,string second_section);
+
 /*
  * Module entry point
  */
@@ -194,9 +236,13 @@ initTrack(int index, tTrack* track, void *carHandle, void **carParmHandle, tSitu
 {
     curTrack = track;
     *carParmHandle = NULL;
-#ifdef _PRINT_RACE_RESULTS__
-    trackName = strrchr(track->filename, '/') + 1;
-#endif
+    char buffer[BUFSIZE];
+    sprintf(buffer, "drivers/scr_server/%d/default.xml", index+1);
+    cout << "Init track";
+    *carParmHandle = GfParmReadFile(buffer, GFPARM_RMODE_STD);
+    sprintf(trackname,"%s",track->name);
+    udpInit(index);
+    initParam();
 }
 
 /* Start a new race. */
@@ -327,12 +373,9 @@ newrace(int index, tCarElt* car, tSituation *s)
 
     prevDist[index]=-1;
 
-    // car configuration
-    memset(line, 0x0, UDP_MSGLEN);
-    recvfrom(listenSocket[index], line, UDP_MSGLEN, 0,
-                     (struct sockaddr *) &clientAddress[index],
-                     &clientAddressLength[index]);
-    std::cout << "RECEIVED: " << line;
+    /*************************** car configuration ***************************/
+    recvParameters(index, car);
+    std::cout << "RECEIVED PARAMETERS";
 }
 
 
@@ -781,4 +824,269 @@ double normRand(double avg,double std)
 	    y1 = x1 * w;
 	    y2 = x2 * w;
 	    return y1*std + avg;
+}
+
+int recvParameters(int index,tCarElt* car)
+{
+
+    string msg;
+    int count=0;
+    do
+    {
+        count++;
+        msg = udpRecv(index,__UDP_TIMEOUT__);
+#ifdef __VERBOSE__
+        if (msg.compare("")==0)
+			printf("Communication Error! Cannot receive parameters from the client.\n");
+#endif
+
+    } while (msg.compare("")==0 && timeoutsCount[index]>0);
+
+    istringstream inMsg(msg);
+
+    string command;
+    int simulTime;
+
+    double params[__PAR_NUM__];
+
+    if (timeoutsCount[index]<=0)
+    {
+        printf("The CPU time limit has been reached!\nBye.\n");
+        exit(1);
+    }
+
+    inMsg >> command >> simulTime;
+
+    if(command.compare(__EVAL_HEADER__)!=0)
+    {
+        printf("Unexpected command received from the client: %s (%s command expected).\nBye.\n", command.c_str(), __EVAL_HEADER__);
+        exit(1);
+    }
+
+    count = 0;
+    while(count < __PAR_NUM__ && inMsg >> params[count++]);
+    if (count != __PAR_NUM__)
+    {
+        printf("Unexpected number of parameters received from the client.\nBye.\n");
+        exit(1);
+
+    }
+
+    for (int i=0; i<__PAR_NUM__; i++)
+    {
+        int j=paramIndex[i];
+        double value = (paramData[j].maxVal - paramData[j].minVal)*params[i] + paramData[j].minVal;
+        if (strcmp(paramData[j].section,"useless")!=0)
+            GfParmSetNum(car->_carHandle, paramData[j].section, paramData[j].name, paramData[j].unit, value);
+        if (paramData[j].double_param == true)
+            GfParmSetNum(car->_carHandle, paramData[j].second_section, paramData[j].name, paramData[j].unit, value);
+    }
+
+
+    if (simulTime==0){ //save current params tofile
+
+        int curtic =  __TOTAL_TICS__ - remainingtime[index];
+        char filename[200];
+
+        sprintf(filename,"best-setup-time%d-%s.txt",curtic,trackname);
+
+        std::ofstream outFile(filename,std::ios::out);
+        outFile<< "Index\tSection\tName\tValue"  << std::endl;
+        for (int i=0; i<__PAR_NUM__; i++)
+        {
+            int j=paramIndex[i];
+            double value = (paramData[j].maxVal - paramData[j].minVal)*params[j] + paramData[j].minVal;
+            if (strcmp(paramData[j].section,"useless")!=0)
+                outFile<< i << "\t" << paramData[j].section << "\t" << paramData[j].name << "\t" << value << std::endl;
+        }
+        outFile.close();
+
+        std::cout << "Best param set saved!";
+
+    }
+
+    return simulTime;
+}
+
+
+void sendResults(int index)
+{
+
+    stringstream resMsg;
+
+    if (totalDamage[index]<0)
+        totalDamage[index]=0;
+
+    resMsg << __RESULT_HEADER__ << " " << bestLap[index] << " " << topSpeed[index] << " " << distRaced[index] << " " << totalDamage[index];
+
+    if (!udpSend(index,resMsg.str()))
+    {
+        printf("Communication Error! Cannot send the following message to the client: %s\nBye.\n",resMsg.str().c_str());
+        exit(1);
+    }
+
+#ifdef __VERBOSE__
+    printf("Evaluation Result: BEST LAP = %f TOP SPEED = %f DISTANCE RACED = %f DAMAGE = %f\n",bestLap[index], topSpeed[index], distRaced[index],totalDamage[index]);
+#endif
+
+}
+
+bool udpSend(int index, string msg)
+{
+    if (sendto(listenSocket[index], msg.c_str(), msg.length(), 0, (struct sockaddr *) &clientAddress[index], sizeof(clientAddress[index])) < 0)
+    {
+#ifdef __VERBOSE__
+        std::cout << "Communication Error: cannot send the  following message <" << msg << ">" << std::endl;
+#endif
+        return false;
+    }
+
+    return true;
+}
+
+void udpInit(int index)
+{
+#ifdef _WIN32	/* WinSock Startup */
+    WSADATA wsaData={0};
+	WORD wVer = MAKEWORD(2,2);
+	int nRet = WSAStartup(wVer,&wsaData);
+
+	if(nRet == SOCKET_ERROR)
+	{
+		std::cout << "Failed to init WinSock library" << std::endl;
+		exit(1);
+	}
+#endif
+
+    listenSocket[index] = socket(AF_INET, SOCK_DGRAM, 0);
+    if (listenSocket[index] < 0)
+    {
+        std::cerr << "Error: cannot create listenSocket!";
+        exit(1);
+    }
+
+    // Bind listen socket to listen port.
+    serverAddress[index].sin_family = AF_INET;
+    serverAddress[index].sin_addr.s_addr = htonl(INADDR_ANY);
+    serverAddress[index].sin_port = htons(UDP_LISTEN_PORT+index);
+
+    if (bind(listenSocket[index],
+             (struct sockaddr *) &serverAddress[index],
+             sizeof(serverAddress[index])) < 0)
+    {
+        std::cerr << "Fatal Error: Cannot bind socket" << std::endl;
+        exit(1);
+    }
+    // Wait for connections from clients.
+    listen(listenSocket[index], 5);
+
+    std::cout << "Waiting for request on port " << UDP_LISTEN_PORT+index << "\n";
+}
+
+
+string udpRecv(int index, long int timeout)
+{
+    // local variables for UDP
+    struct timeval timeVal;
+    fd_set readSet;
+    char line[UDP_MSGLEN];
+
+    // Set timeout for client answer
+    FD_ZERO(&readSet);
+    FD_SET(listenSocket[index], &readSet);
+    timeVal.tv_sec = timeout;
+    timeVal.tv_usec = 0;
+    memset(line, 0x0,UDP_MSGLEN);
+    clientAddressLength[index] = sizeof(clientAddress[index]);
+
+    if (select(listenSocket[index]+1, &readSet, NULL, NULL, &timeVal))
+    {
+        // Read the client controller action
+        memset(line, 0x0,UDP_MSGLEN );  // Zero out the buffer.
+        int numRead = recvfrom(listenSocket[index], line, UDP_MSGLEN, 0,
+                               (struct sockaddr *) &clientAddress[index],
+                               &clientAddressLength[index]);
+
+        if (numRead < 0)
+        {
+#ifdef __VERBOSE__
+            std::cout << "Communtication Error: cannot get any response from the client!";
+#endif
+        }
+        if (numRead>0)
+            return string(line);
+    }
+    timeoutsCount[index] --;
+    return string("");
+}
+
+static void initParam()
+{
+    srand(time(NULL));
+    for(int i=0; i<__PAR_NUM__; i++)
+    {
+        paramIndex[i]=i;
+    }
+
+    int idx=0;
+
+    loadSingleParam(idx,"Rear Wing","angle","deg",0,18,14.0);
+    loadSingleParam(idx,"Front Wing","angle","deg",0,12,6.0);
+
+    loadSingleParam(idx,"Brake System","front-rear brake repartition","SI",0.3,0.7,0.5);
+    loadSingleParam(idx,"Brake System","max pressure","kPa",100,150000,40000);
+    loadSingleParam(idx,"Front Anti-Roll Bar","spring","lbs/in",0,5000,5000);
+    loadSingleParam(idx,"Rear Anti-Roll Bar","spring","lbs/in",0,5000,0);
+
+    loadDoubleParam(idx,"Front Right Wheel","ride height","mm",100,300,100,"Front Left Wheel");
+    loadDoubleParam(idx,"Front Right Wheel","toe","deg",-5,5,0,"Front Left Wheel");
+    loadDoubleParam(idx,"Front Right Wheel","camber","deg",-5,-3,-2,"Front Left Wheel");
+
+    loadDoubleParam(idx,"Rear Right Wheel","ride height","mm",100,300,100,"Rear Left Wheel");
+    loadDoubleParam(idx,"Rear Right Wheel","camber","deg",-5,-2,-2,"Rear Left Wheel");
+
+    loadDoubleParam(idx,"Front Right Suspension","spring","lbs/in",0,10000,5000,"Front Left Suspension");
+    loadDoubleParam(idx,"Front Right Suspension","suspension course","m",0,0.2,0.1,"Front Left Suspension");
+
+    loadDoubleParam(idx,"Rear Right Suspension","spring","lbs/in",0,10000,5000,"Rear Left Suspension");
+    loadDoubleParam(idx,"Rear Right Suspension","suspension course","m",0,0.2,0.1,"Rear Left Suspension");
+
+    loadDoubleParam(idx,"Front Right Brake","disk diameter","mm",100,380,200,"Front Left Brake");
+    loadDoubleParam(idx,"Rear Right Brake","disk diameter","mm",100,380,200,"Rear Left Brake");
+
+    assert(idx==__PAR_NUM__);
+
+
+#ifdef __VERBOSE__
+    printf("Params index:");
+	for(int i=0; i<__PAR_NUM__; i++)
+	{
+		printf(" %d",paramIndex[i]);
+	}
+	printf("\n");
+#endif
+
+}
+
+static void loadSingleParam(int &idx, string section,string name,string unit, double minVal,double maxVal,double defaultVal){
+    strcpy(paramData[idx].section,section.c_str());
+    strcpy(paramData[idx].name,name.c_str());
+    strcpy(paramData[idx].unit,unit.c_str());
+    paramData[idx].minVal=minVal;
+    paramData[idx].maxVal=maxVal;
+    paramData[idx].defaultvalue=defaultVal;//(minVal+maxVal)/2.0;
+    paramData[idx].double_param=false;
+    idx++;
+}
+
+static void loadDoubleParam(int &idx, string section,string name,string unit, double minVal,double maxVal,double defaultVal, string second_section){
+    strcpy(paramData[idx].section,section.c_str());
+    strcpy(paramData[idx].second_section,second_section.c_str());
+    strcpy(paramData[idx].name,name.c_str());
+    strcpy(paramData[idx].unit,unit.c_str());
+    paramData[idx].minVal=minVal;
+    paramData[idx].maxVal=maxVal;
+    paramData[idx].defaultvalue=defaultVal;//(minVal+maxVal)/2.0;
+    paramData[idx].double_param=true;
+    idx++;
 }
