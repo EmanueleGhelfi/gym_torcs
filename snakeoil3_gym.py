@@ -59,6 +59,7 @@ import getopt
 import os
 import time
 PI= 3.14159265359
+N_PARAMS = 17
 
 data_size = 2**17
 
@@ -190,9 +191,11 @@ class Client():
                 break
             
         # send car configuration to server
-        car_conf = "SCHIFO"
+        params = ""
+        for _ in range(N_PARAMS):
+            params+= " " + "0.1"
         try:
-            self.so.sendto(car_conf.encode(), (self.host, self.port))
+            self.so.sendto(params.encode(), (self.host, self.port))
         except socket.error as emsg:
             print("Error, ops")
             sys.exit(-1)
