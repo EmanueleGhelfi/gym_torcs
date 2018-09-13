@@ -2,7 +2,7 @@ from gym_torcs import TorcsEnv
 from sample_agent import Agent
 import numpy as np
 
-vision = True
+vision = False
 episode_count = 10
 max_steps = 50
 reward = 0
@@ -24,7 +24,7 @@ for i in range(episode_count):
         ob = env.reset(relaunch=True)
     else:
         ob = env.reset()
-
+    print(ob)
     total_reward = 0.
     for j in range(max_steps):
         action = agent.act(ob, reward, done, vision)

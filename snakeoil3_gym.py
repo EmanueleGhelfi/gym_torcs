@@ -188,6 +188,15 @@ class Client():
             if identify in sockdata:
                 print("Client connected on %d.............." % self.port)
                 break
+            
+        # send car configuration to server
+        car_conf = "SCHIFO"
+        try:
+            self.so.sendto(car_conf.encode(), (self.host, self.port))
+        except socket.error as emsg:
+            print("Error, ops")
+            sys.exit(-1)
+            
 
     def parse_the_command_line(self):
         try:

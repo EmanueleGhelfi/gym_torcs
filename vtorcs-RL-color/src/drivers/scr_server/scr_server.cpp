@@ -326,10 +326,14 @@ newrace(int index, tCarElt* car, tSituation *s)
     oppSens[index] = new ObstacleSensors(36, curTrack, car, s, __SENSORS_RANGE__);
 
     prevDist[index]=-1;
+
+    // car configuration
+    memset(line, 0x0, UDP_MSGLEN);
+    recvfrom(listenSocket[index], line, UDP_MSGLEN, 0,
+                     (struct sockaddr *) &clientAddress[index],
+                     &clientAddressLength[index]);
+    std::cout << "RECEIVED: " << line;
 }
-
-
-
 
 
 /* Drive during race. */
