@@ -151,7 +151,6 @@ static const float ABS_SLIP=0.9;
 static const float ABS_MINSPEED=3.0;
 
 int recvParameters(int index, tCarElt* car);
-void sendResults(int index);
 bool udpSend(int index, string msg);
 string udpRecv(int index, long int timeout);
 void loadDefault(int index,tCarElt* car);
@@ -844,7 +843,7 @@ int recvParameters(int index,tCarElt* car)
 			printf("Communication Error! Cannot receive parameters from the client.\n");
 #endif
 
-    } while (msg.compare("")==0 && timeoutsCount[index]>0);
+    } while (msg.compare("")==0);
 
     istringstream inMsg(msg);
 
@@ -853,19 +852,7 @@ int recvParameters(int index,tCarElt* car)
 
     double params[__PAR_NUM__];
 
-    if (timeoutsCount[index]<=0)
-    {
-        printf("The CPU time limit has been reached!\nBye.\n");
-        exit(1);
-    }
-
     inMsg >> command >> simulTime;
-
-    if(command.compare(__EVAL_HEADER__)!=0)
-    {
-        printf("Unexpected command received from the client: %s (%s command expected).\nBye.\n", command.c_str(), __EVAL_HEADER__);
-        exit(1);
-    }
 
     count = 0;
     while(count < __PAR_NUM__ && inMsg >> params[count++]);
@@ -886,54 +873,9 @@ int recvParameters(int index,tCarElt* car)
             GfParmSetNum(car->_carHandle, paramData[j].second_section, paramData[j].name, paramData[j].unit, value);
     }
 
-
-    if (simulTime==0){ //save current params tofile
-
-        int curtic =  __TOTAL_TICS__ - remainingtime[index];
-        char filename[200];
-
-        sprintf(filename,"best-setup-time%d-%s.txt",curtic,trackname);
-
-        std::ofstream outFile(filename,std::ios::out);
-        outFile<< "Index\tSection\tName\tValue"  << std::endl;
-        for (int i=0; i<__PAR_NUM__; i++)
-        {
-            int j=paramIndex[i];
-            double value = (paramData[j].maxVal - paramData[j].minVal)*params[j] + paramData[j].minVal;
-            if (strcmp(paramData[j].section,"useless")!=0)
-                outFile<< i << "\t" << paramData[j].section << "\t" << paramData[j].name << "\t" << value << std::endl;
-        }
-        outFile.close();
-
-        std::cout << "Best param set saved!";
-
-    }
-
     return simulTime;
 }
 
-
-void sendResults(int index)
-{
-
-    stringstream resMsg;
-
-    if (totalDamage[index]<0)
-        totalDamage[index]=0;
-
-    resMsg << __RESULT_HEADER__ << " " << bestLap[index] << " " << topSpeed[index] << " " << distRaced[index] << " " << totalDamage[index];
-
-    if (!udpSend(index,resMsg.str()))
-    {
-        printf("Communication Error! Cannot send the following message to the client: %s\nBye.\n",resMsg.str().c_str());
-        exit(1);
-    }
-
-#ifdef __VERBOSE__
-    printf("Evaluation Result: BEST LAP = %f TOP SPEED = %f DISTANCE RACED = %f DAMAGE = %f\n",bestLap[index], topSpeed[index], distRaced[index],totalDamage[index]);
-#endif
-
-}
 
 bool udpSend(int index, string msg)
 {
