@@ -154,7 +154,6 @@ int recvParameters(int index, tCarElt* car);
 void sendResults(int index);
 bool udpSend(int index, string msg);
 string udpRecv(int index, long int timeout);
-void udpInit(int index);
 void loadDefault(int index,tCarElt* car);
 //************************************************************
 
@@ -247,7 +246,6 @@ initTrack(int index, tTrack* track, void *carHandle, void **carParmHandle, tSitu
     cout << "Init track";
     *carParmHandle = GfParmReadFile(buffer, GFPARM_RMODE_STD);
     sprintf(trackname,"%s",track->name);
-    udpInit(index);
     initParam();
 }
 
@@ -948,45 +946,6 @@ bool udpSend(int index, string msg)
     }
 
     return true;
-}
-
-void udpInit(int index)
-{
-#ifdef _WIN32	/* WinSock Startup */
-    WSADATA wsaData={0};
-	WORD wVer = MAKEWORD(2,2);
-	int nRet = WSAStartup(wVer,&wsaData);
-
-	if(nRet == SOCKET_ERROR)
-	{
-		std::cout << "Failed to init WinSock library" << std::endl;
-		exit(1);
-	}
-#endif
-
-    listenSocket[index] = socket(AF_INET, SOCK_DGRAM, 0);
-    if (listenSocket[index] < 0)
-    {
-        std::cerr << "Error: cannot create listenSocket!";
-        exit(1);
-    }
-
-    // Bind listen socket to listen port.
-    serverAddress[index].sin_family = AF_INET;
-    serverAddress[index].sin_addr.s_addr = htonl(INADDR_ANY);
-    serverAddress[index].sin_port = htons(UDP_LISTEN_PORT+index);
-
-    if (bind(listenSocket[index],
-             (struct sockaddr *) &serverAddress[index],
-             sizeof(serverAddress[index])) < 0)
-    {
-        std::cerr << "Fatal Error: Cannot bind socket" << std::endl;
-        exit(1);
-    }
-    // Wait for connections from clients.
-    listen(listenSocket[index], 5);
-
-    std::cout << "Waiting for request on port " << UDP_LISTEN_PORT+index << "\n";
 }
 
 
