@@ -78,6 +78,7 @@ ophelp+= ' --version, -v        Show current version.'
 usage= 'Usage: %s [ophelp [optargs]] \n' % sys.argv[0]
 usage= usage + ophelp
 version= "20130505-2"
+LAUNCH_TORCS = 'torcs -T &'
 
 def clip(v,lo,hi):
     if v<lo: return lo
@@ -151,7 +152,7 @@ class Client():
         # == Initialize Connection To Server ==
         self.so.settimeout(1)
 
-        n_fail = 5
+        n_fail = 1
         while True:
             # This string establishes track sensor angles! You can customize them.
             #a= "-90 -75 -60 -45 -30 -20 -15 -10 -5 0 5 10 15 20 30 45 60 75 90"
@@ -175,11 +176,11 @@ class Client():
                     print("relaunch torcs")
                     os.system('pkill torcs')
                     time.sleep(1.0)
-                    os.system('torcs -T -nofuel -nodamage -nolaptime &')
+                    os.system(LAUNCH_TORCS)
 
                     time.sleep(1.0)
                     #os.system('sh autostart.sh')
-                    n_fail = 5
+                    n_fail = 1
                 n_fail -= 1
 
             identify = '***identified***'
@@ -190,7 +191,7 @@ class Client():
         # send car configuration to server
         params = ""
         for _ in range(N_PARAMS):
-            params+= " " + "0.1"
+            params+= " " + "0.0"
         try:
             self.so.sendto(params.encode(), (self.host, self.port))
         except socket.error as emsg:
@@ -300,7 +301,7 @@ class ServerState():
     '''What the server is reporting right now.'''
     def __init__(self):
         self.servstr= str()
-        self.d= dict()
+        self.d = dict()
 
     def parse_server_str(self, server_string):
         '''Parse the server string.'''
@@ -539,7 +540,7 @@ def drive_example(c):
     '''This is only an example. It will get around the track but the
     correct thing to do is write your own `drive()` function.'''
     S,R= c.S.d,c.R.d
-    target_speed=100
+    target_speed=400
 
     # Steer To Corner
     R['steer']= S['angle']*10 / PI
