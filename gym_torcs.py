@@ -238,6 +238,7 @@ class TorcsEnv:
     total: 36 element 
     """
     def make_observation(self, raw_obs, return_np=False):
+        return_np = True
         if return_np:
             ob = np.concatenate((np.array(raw_obs['focus'], dtype=np.float32).reshape(-1)/200,
                                 np.array(raw_obs['speedX'],dtype=np.float32).reshape(-1)/self.default_speed,
@@ -251,6 +252,7 @@ class TorcsEnv:
                                 np.array(raw_obs['totalDistFromStart'], dtype=np.float32).reshape(-1),
                                 np.array(raw_obs['distFromStart'], dtype=np.float32).reshape(-1)
                                 ))
+            print(ob.shape)
         else:
             names = ['focus',
                      'speedX', 'speedY', 'speedZ',
