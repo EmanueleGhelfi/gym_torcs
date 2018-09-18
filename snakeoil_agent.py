@@ -5,7 +5,7 @@ class Agent(object):
     def __init__(self, dim_action):
         self.dim_action = dim_action
 
-    def act(self, ob, reward, done, vision_on):
+    def act(self, ob):
 
         # Get an Observation from the environment.
         # Each observation vectors are numpy array.

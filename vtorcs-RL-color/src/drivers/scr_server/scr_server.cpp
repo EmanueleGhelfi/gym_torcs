@@ -663,6 +663,13 @@ if (RESTARTING[index]==0)
 #endif
         }
 
+        // MANU: exit server
+        if (carCtrl.getExit()==1)
+        {
+            std::cout << "Server exiting... \n";
+            exit(0);
+        }
+
         // Set controls command and store them in variables
         oldAccel[index] = car->_accelCmd = carCtrl.getAccel();
         oldBrake[index] = car->_brakeCmd = carCtrl.getBrake();

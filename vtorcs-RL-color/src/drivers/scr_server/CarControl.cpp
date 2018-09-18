@@ -29,6 +29,18 @@ CarControl::CarControl(float accel, float brake, int gear, float steer, float cl
 	this->meta = meta;
 }
 
+CarControl::CarControl(float accel, float brake, int gear, float steer, float clutch, int focus, int meta, int exit_)
+{
+	this->accel = accel;
+	this->brake = brake;
+	this->gear  = gear;
+	this->steer = steer;
+	this->clutch = clutch;
+	this->focus = focus;
+	this->meta = meta;
+	this->exit_ = exit_;
+}
+
 CarControl::CarControl(float accel, float brake, int gear, float steer, float clutch, int focus)
 {
 	this->accel = accel;
@@ -78,6 +90,8 @@ CarControl::fromString(string sensors)
 		meta=0;
 	if (SimpleParser::parse(sensors, "focus", focus)==false) //ML
 		focus=0; //ML
+	if (SimpleParser::parse(sensors, "exit", exit_)==false) //MANU
+		exit_=0; //MANU
 	if (focus < -90 || focus > 90)//ML What to do with focus requests out of allowed range?
 		focus=360;//ML A value of 360 is used for not requesting focus readings; -1 is returned as focus reading to the client
 }
@@ -165,3 +179,16 @@ CarControl::setFocus(int focus)
 { 
         this->focus = focus;
 };
+
+int
+CarControl::getExit()
+{ 
+        return this->exit_;
+};
+
+void
+CarControl::setExit(int exit_)
+{ 
+        this->exit_ = exit_;
+};
+

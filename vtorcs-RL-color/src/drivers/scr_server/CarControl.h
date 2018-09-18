@@ -46,6 +46,9 @@ private:
         // meta-command
         int meta;
 
+        // exit-command
+        int exit_;
+
   		// focus command [-90,90], i.e. angle of track sensor focus desired by client
 		int focus;
 
@@ -57,6 +60,7 @@ public:
 
         CarControl(float accel, float brake, int gear, float steer, float clutch, int focus, int meta);
         CarControl(float accel, float brake, int gear, float steer, float clutch, int focus);
+        CarControl(float accel, float brake, int gear, float steer, float clutch, int focus, int meta, int exit_);
 
         string toString();
 
@@ -91,6 +95,11 @@ public:
 		int getFocus();
 
 		void setFocus(int focus);
+
+        // Manu, command for close the server
+        int getExit();
+
+        void setExit(int exit_);
 
         // meta-command value for race restart
         static int META_RESTART;
