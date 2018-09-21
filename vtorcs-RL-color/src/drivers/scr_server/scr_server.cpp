@@ -565,6 +565,8 @@ drive(int index, tCarElt* car, tSituation *s)
     stateString += SimpleParser::stringify("wheelSpinVel", wheelSpinVel, 4);
     stateString += SimpleParser::stringify("z", car->_pos_Z  - RtTrackHeightL(&(car->_trkPos)));
     stateString += SimpleParser::stringify("focus", focusSensorOut, 5);//ML
+    stateString += SimpleParser::stringify("laps", car->race.laps);//MANU
+    stateString += SimpleParser::stringify("bestLap", float(car->race.bestLapTime)); //MANU
 
     //GIUSE - VISION HERE!
 //    printf("size: %d\n",car->vision->imgsize);
@@ -854,12 +856,7 @@ int recvParameters(int index,tCarElt* car)
 
     istringstream inMsg(msg);
 
-    string command;
-    int simulTime;
-
     double params[__PAR_NUM__];
-
-    inMsg >> command >> simulTime;
 
     count = 0;
     while(count < __PAR_NUM__ && inMsg >> params[count++]);
@@ -881,7 +878,7 @@ int recvParameters(int index,tCarElt* car)
             GfParmSetNum(car->_carHandle, paramData[j].second_section, paramData[j].name, paramData[j].unit, value);
     }
 
-    return simulTime;
+    return 0;
 }
 
 
