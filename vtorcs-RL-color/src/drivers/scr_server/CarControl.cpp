@@ -69,6 +69,8 @@ CarControl::toString()
 	str += SimpleParser::stringify("clutch", clutch);
 	str += SimpleParser::stringify("focus",  focus);
 	str += SimpleParser::stringify("meta", meta);
+	str += SimpleParser::stringify("exit", exit_);
+
 	
 	return str;	
 }

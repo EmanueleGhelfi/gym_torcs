@@ -74,7 +74,7 @@ static int UDP_MSGLEN = 64*64+1000;
 /************************/
 
 static int UDP_TIMEOUT = UDP_DEFAULT_TIMEOUT;
-#define __PAR_NUM__ 2
+#define __PAR_NUM__ 7
 
 #define NBBOTS 10
 #define BUFSIZE 256
@@ -942,12 +942,12 @@ static void initParam()
     int idx=0;
 
     loadSingleParam(idx,"Rear Wing","angle","deg",0,90,0.0);
-    //loadSingleParam(idx,"Front Wing","angle","deg",0,90,0.0);
+    loadSingleParam(idx,"Front Wing","angle","deg",0,90,0.0);
 
     loadSingleParam(idx,"Brake System","front-rear brake repartition","SI",0,1,0.5);
     //loadSingleParam(idx,"Brake System","max pressure","kPa",0,150000,40000);
-    //loadSingleParam(idx,"Front Anti-Roll Bar","spring","lbs/in",0,5000,5000);
-    //loadSingleParam(idx,"Rear Anti-Roll Bar","spring","lbs/in",0,5000,0);
+    loadSingleParam(idx,"Front Anti-Roll Bar","spring","lbs/in",0,5000,5000);
+    loadSingleParam(idx,"Rear Anti-Roll Bar","spring","lbs/in",0,5000,0);
 
     //loadDoubleParam(idx,"Front Right Wheel","ride height","mm",0,300,100,"Front Left Wheel");
     // loadDoubleParam(idx,"Front Right Wheel","toe","deg",-20,20,0,"Front Left Wheel");
@@ -962,8 +962,8 @@ static void initParam()
     // loadDoubleParam(idx,"Rear Right Suspension","spring","lbs/in",0,10000,5000,"Rear Left Suspension");
     // loadDoubleParam(idx,"Rear Right Suspension","suspension course","m",0,1,0.1,"Rear Left Suspension");
 
-    // loadDoubleParam(idx,"Front Right Brake","disk diameter","mm",0,600,200,"Front Left Brake");
-    // loadDoubleParam(idx,"Rear Right Brake","disk diameter","mm",0,600,200,"Rear Left Brake");
+    loadDoubleParam(idx,"Front Right Brake","disk diameter","mm",0,600,200,"Front Left Brake");
+    loadDoubleParam(idx,"Rear Right Brake","disk diameter","mm",0,600,200,"Rear Left Brake");
 
     assert(idx==__PAR_NUM__);
 
