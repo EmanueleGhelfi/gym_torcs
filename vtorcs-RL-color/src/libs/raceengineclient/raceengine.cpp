@@ -517,7 +517,7 @@ ReSortCars(void)
 	}
 	if (s->cars[i]->RESTART==1)
 	{
-		printf("******* RESTARTING *****\n");
+		//printf("******* RESTARTING *****\n");
 		RESTART = 1;
 		s->cars[i]->RESTART=0;
 	}

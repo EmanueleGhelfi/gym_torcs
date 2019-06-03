@@ -74,12 +74,12 @@ static int UDP_MSGLEN = 64*64+1000;
 /************************/
 
 static int UDP_TIMEOUT = UDP_DEFAULT_TIMEOUT;
-#define __PAR_NUM__ 7
+#define __PAR_NUM__ 2
 
 #define NBBOTS 10
 #define BUFSIZE 256
 // Uncomment the following line to run the server in verbose mode
-#define __VERBOSE__
+// #define __VERBOSE__
 
 #define __UDP_MSG_RETRY__ 7200
 
@@ -241,8 +241,9 @@ initTrack(int index, tTrack* track, void *carHandle, void **carParmHandle, tSitu
     curTrack = track;
     *carParmHandle = NULL;
     char buffer[BUFSIZE];
-    sprintf(buffer, "drivers/scr_server/%d/default.xml", index+1);
-    cout << "Init track";
+    sprintf(buffer, "drivers/scr_server/%d/default_%d.xml", index+1, getUDPListenPort() + index);
+    std::cout << "loading configuration " << getUDPListenPort() + index << "\n"; 
+    //cout << "Init track";
     *carParmHandle = GfParmReadFile(buffer, GFPARM_RMODE_STD);
     sprintf(trackname,"%s",track->name);
     initParam();
@@ -305,7 +306,7 @@ newrace(int index, tCarElt* car, tSituation *s)
     // Wait for connections from clients.
     listen(listenSocket[index], 5);
 
-    std::cout << "Waiting for request on port " << getUDPListenPort()+index << "\n";
+    //std::cout << "Waiting for request on port " << getUDPListenPort()+index << "\n";
 
     // Loop until a client identifies correctly
     while (!identified)
@@ -378,7 +379,7 @@ newrace(int index, tCarElt* car, tSituation *s)
 
     /*************************** car configuration ***************************/
     recvParameters(index, car);
-    std::cout << "RACE IS STARTING... \n";
+    //std::cout << "RACE IS STARTING... \n";
 }
 
 
@@ -846,7 +847,7 @@ int recvParameters(int index,tCarElt* car)
     {
         count++;
         msg = udpRecv(index,UDP_TIMEOUT);
-        cout << "Received params are: " << msg <<"\n";
+        //cout << "Received params are: " << msg <<"\n";
 #ifdef __VERBOSE__
         if (msg.compare("")==0)
 			printf("Communication Error! Cannot receive parameters from the client.\n");
@@ -869,9 +870,9 @@ int recvParameters(int index,tCarElt* car)
     for (int i=0; i<__PAR_NUM__; i++)
     {
         int j=paramIndex[i];
-        cout << "Setting: " << paramData[j].section << " "<< paramData[j].name << " with " << params[i] << "\n";
+        //cout << "Setting: " << paramData[j].section << " "<< paramData[j].name << " with " << params[i] << "\n";
         double value = (paramData[j].maxVal - paramData[j].minVal)*params[i] + paramData[j].minVal;
-        cout << "value" << value << "\n";
+        //cout << "value" << value << "\n";
         if (strcmp(paramData[j].section,"useless")!=0)
             GfParmSetNum(car->_carHandle, paramData[j].section, paramData[j].name, paramData[j].unit, value);
         if (paramData[j].double_param == true)
@@ -944,10 +945,10 @@ static void initParam()
     loadSingleParam(idx,"Rear Wing","angle","deg",0,90,0.0);
     loadSingleParam(idx,"Front Wing","angle","deg",0,90,0.0);
 
-    loadSingleParam(idx,"Brake System","front-rear brake repartition","SI",0,1,0.5);
+    //loadSingleParam(idx,"Brake System","front-rear brake repartition","SI",0,1,0.5);
     //loadSingleParam(idx,"Brake System","max pressure","kPa",0,150000,40000);
-    loadSingleParam(idx,"Front Anti-Roll Bar","spring","lbs/in",0,5000,5000);
-    loadSingleParam(idx,"Rear Anti-Roll Bar","spring","lbs/in",0,5000,0);
+    // loadSingleParam(idx,"Front Anti-Roll Bar","spring","lbs/in",0,5000,5000);
+    //loadSingleParam(idx,"Rear Anti-Roll Bar","spring","lbs/in",0,5000,0);
 
     //loadDoubleParam(idx,"Front Right Wheel","ride height","mm",0,300,100,"Front Left Wheel");
     // loadDoubleParam(idx,"Front Right Wheel","toe","deg",-20,20,0,"Front Left Wheel");
@@ -962,8 +963,8 @@ static void initParam()
     // loadDoubleParam(idx,"Rear Right Suspension","spring","lbs/in",0,10000,5000,"Rear Left Suspension");
     // loadDoubleParam(idx,"Rear Right Suspension","suspension course","m",0,1,0.1,"Rear Left Suspension");
 
-    loadDoubleParam(idx,"Front Right Brake","disk diameter","mm",0,600,200,"Front Left Brake");
-    loadDoubleParam(idx,"Rear Right Brake","disk diameter","mm",0,600,200,"Rear Left Brake");
+    // loadDoubleParam(idx,"Front Right Brake","disk diameter","mm",0,600,200,"Front Left Brake");
+    // loadDoubleParam(idx,"Rear Right Brake","disk diameter","mm",0,600,200,"Rear Left Brake");
 
     assert(idx==__PAR_NUM__);
 

@@ -184,15 +184,15 @@
 	</section>
 	
 	<section name="Front Wing">
-		<attnum name="area" unit="m2" val="0.25"/>
-		<attnum name="angle" unit="deg" min="0" max="12" val="6"/>
+		<attnum name="area" unit="m2" val="5"/>
+		<attnum name="angle" unit="deg" min="0" max="90" val="90"/>
 		<attnum name="xpos" unit="m" val="2.20"/>
 		<attnum name="zpos" unit="m" val="0.04"/>
 	</section>
 	
 	<section name="Rear Wing">
-		<attnum name="area" unit="m2" min="0" max="1.0" val="0.7"/>
-		<attnum name="angle" unit="deg" min="0" max="18" val="14"/>
+		<attnum name="area" unit="m2" min="0" max="5.0" val="5"/>
+		<attnum name="angle" unit="deg" min="0" max="90" val="90"/>
 		<attnum name="xpos" unit="m" min="-2.5" max="-1.0" val="-2.01"/>
 		<attnum name="zpos" unit="m" min="0.1" max="1.5" val="0.99"/>
 	</section>

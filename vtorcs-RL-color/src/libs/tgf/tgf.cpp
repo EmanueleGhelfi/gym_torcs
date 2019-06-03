@@ -427,9 +427,9 @@ int GfCreateDir(char *path)
 }
 
 /* flags used to remove damage, time-limit and fuel consumption */
-static bool _damageLimit = true;
-static bool _fuelConsumption = true;
-static bool _laptimeLimit = true;
+static bool _damageLimit = false;
+static bool _fuelConsumption = false;
+static bool _laptimeLimit = false;
 /* timeout for UDP connection */
 static long int _timeout = -1;
 
